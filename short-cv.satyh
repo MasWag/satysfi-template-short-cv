@@ -1,0 +1,304 @@
+% -*- coding: utf-8 -*-
+%
+% Reusable one-page English short-CV layout.
+%
+
+@require: annot
+@require: easytable/easytable
+@require: base/block
+@require: base/context
+@require: base/inline
+@require: base/pager
+@require: figbox/figbox
+@require: fss/fss
+@require: fss/style
+@require: gr
+@require: latexcmds/latexcmds
+@require: list
+@require: option
+@require: parallel/parallel
+
+open Block
+open Context
+open EasyTableAlias
+open Inline
+open Pager
+
+type cv-list-style =
+  | Bulleted
+  | Numbered
+  | Plain
+
+let-inline ctx \cvbreak =
+  Inline.mandatory-break ctx
+
+let paper-width = 210mm
+let paper-height = 297mm
+let side-margin = 14.5mm
+let top-margin = 13mm
+let bottom-margin = 18mm
+let text-width = paper-width -' side-margin -' side-margin
+let text-height = paper-height -' top-margin -' bottom-margin
+
+let body-font-size = 8.8pt
+let title-font-size = 11.5pt
+let name-font-size = 14pt
+let footer-font-size = 7.5pt
+
+let portrait-column-width = 35mm
+let header-copy-width = text-width -' portrait-column-width
+let portrait-column-ratio = portrait-column-width /' text-width
+let header-copy-ratio = header-copy-width /' text-width
+let affiliation-ratio = 0.62
+let address-ratio = 0.38
+
+let section-label-width = 29mm
+% Leave a small tolerance for the outer rules so the inline table never
+% exceeds the paragraph width because of rule rounding.
+let section-body-width = text-width -' section-label-width -' 1pt
+let label-left-pad = 5pt
+let label-right-pad = 5pt
+let body-left-pad = 7pt
+let body-right-pad = 6pt
+let section-v-pad = 4pt
+let entry-marker-width = 13pt
+let entry-gap = 1.1pt
+
+let section-label-content-width =
+  section-label-width -' label-left-pad -' label-right-pad
+
+let section-body-content-width =
+  section-body-width -' body-left-pad -' body-right-pad
+
+let font-latin-regular = (`fonts-noto-sans:NotoSans-Regular`, 1.0, 0.0)
+let font-latin-bold = (`fonts-noto-sans:NotoSans-SemiBold`, 1.0, 0.0)
+
+let base-context =
+  Context.make text-width
+  |> set-dominant-narrow-script Latin
+  |> set-language Latin English
+  |> set-font Latin font-latin-regular
+  |> set-font OtherScript font-latin-regular
+  |> set-font-size body-font-size
+  |> set-leading 11.2pt
+  |> set-min-gap-of-lines 0pt
+  |> set-paragraph-margin 0pt 0pt
+
+let-block ctx +cv-line inner =
+  line-break false false
+    (ctx |> set-paragraph-margin 0pt 0pt)
+    (read-inline ctx inner ++ inline-fil)
+
+let-rec block-text-of-inline-text-list xs =
+  match xs with
+  | [] -> '<>
+  | x :: rest ->
+      let tail = block-text-of-inline-text-list rest in
+      '<
+        +cv-line{#x;}
+        #tail;
+      >
+
+let make-contact-link label target-prefix value =
+  let label-text = embed-string label in
+  let value-text = embed-string value in
+  let target = target-prefix ^ value in
+  {#label-text;: \href(target){#value-text;}}
+
+let append-optional-contact lines label target-prefix valueopt =
+  match valueopt with
+  | None -> lines
+  | Some(value) ->
+      List.append lines [make-contact-link label target-prefix value]
+
+let render-title ctx header =
+  let name = header#name in
+  let subtitle = header#subtitle in
+  let ctx-name =
+    ctx
+    |> set-font Latin font-latin-bold
+    |> set-font-size name-font-size
+  in
+  let ctx-title = ctx |> set-font-size title-font-size in
+  Block.concat [
+    line-break false false ctx-name
+      (inline-fil ++ read-inline ctx-name name ++ inline-fil);
+    Block.skip 2pt;
+    line-break false false ctx-title
+      (inline-fil ++ read-inline ctx-title subtitle ++ inline-fil);
+  ]
+
+let render-bottom-aligned-columns ctx left-vspace right-vspace left right =
+  let total-width = get-text-width ctx in
+  let left-width = total-width *' affiliation-ratio in
+  let right-width = total-width *' address-ratio in
+  let margin = total-width -' left-width -' right-width in
+  let offset-block width vspace content =
+    let box =
+      embed-block-top ctx width
+        (fun column-ctx -> read-block column-ctx content)
+    in
+    if Length.(vspace == 0pt) then box else raise-inline vspace box
+  in
+  let left-box = offset-block left-width left-vspace left in
+  let right-box = offset-block right-width right-vspace right in
+  form-paragraph ctx
+    (left-box ++ inline-skip margin ++ right-box)
+
+let-block ctx +cv-header-copy header =
+  let affiliation-vspace = header#bottom-vspace in
+  let address-vspace = header#bottom-vspace in
+  let affiliation-lines =
+    append-optional-contact
+      header#affiliation-lines `Email` `mailto:` header#email
+  in
+  let affiliation-and-contact-lines =
+    append-optional-contact
+      affiliation-lines `ORCID` `https://orcid.org/` header#orcid
+  in
+  let affiliation =
+    block-text-of-inline-text-list affiliation-and-contact-lines
+  in
+  let address = block-text-of-inline-text-list header#address-lines in
+  let left = '<#affiliation;> in
+  let right = '<#address;> in
+  Block.concat [
+    render-title ctx header;
+    Block.skip 18pt;
+    render-bottom-aligned-columns
+      ctx affiliation-vspace address-vspace left right;
+  ]
+
+let-block ctx +cv-portrait portrait =
+  read-block ctx '<+fig-center(portrait);>
+
+let render-header ctx header =
+  let portrait = header#portrait in
+  let copy = '<+cv-header-copy(header);> in
+  let photo = '<+cv-portrait(portrait);> in
+  Block.concat [
+    read-block ctx '<
+      +parallel-bottom?:(header-copy-ratio)?:(portrait-column-ratio)(copy)(photo);
+    >;
+    Block.skip 16pt;
+  ]
+
+let bullet-graphics color (x, y) =
+  let center = (x +' 3.2pt, y +' 3.6pt) in
+  [fill color (Gr.circle center 1.35pt)]
+
+let bullet-marker ctx =
+  inline-graphics 7pt 7pt 0pt (bullet-graphics (get-text-color ctx))
+
+let marker-for style index ctx =
+  match style with
+  | Bulleted -> bullet-marker ctx
+  | Numbered ->
+      let number = embed-string (arabic index) in
+      read-inline ctx {#number;.}
+  | Plain -> inline-nil
+
+let render-entry ctx style index entry =
+  let marker = marker-for style index ctx in
+  let marker-box =
+    embed-block-top ctx entry-marker-width
+      (fun markerctx ->
+        line-break false false markerctx (marker ++ inline-fil))
+  in
+  let content-width =
+    match style with
+    | Plain -> section-body-content-width
+    | _ -> section-body-content-width -' entry-marker-width
+  in
+  let content-box =
+    embed-block-top ctx content-width
+      (fun contentctx ->
+        line-break false false
+          (contentctx |> set-paragraph-margin 0pt 0pt)
+          (read-inline contentctx entry ++ inline-fil))
+  in
+  match style with
+  | Plain ->
+      line-break false false ctx (content-box ++ inline-fil)
+  | _ ->
+      line-break false false ctx (marker-box ++ content-box ++ inline-fil)
+
+let-rec render-entries-from ctx style index entries =
+  match entries with
+  | [] -> Block.nil
+  | entry :: [] -> render-entry ctx style index entry
+  | entry :: rest ->
+      Block.concat [
+        render-entry ctx style index entry;
+        Block.skip entry-gap;
+        render-entries-from ctx style (index + 1) rest;
+      ]
+
+let render-entries ctx style entries =
+  render-entries-from ctx style 1 entries
+
+let section-label-fmt =
+  vmgn section-v-pad section-v-pad
+    (hmgn label-left-pad label-right-pad
+      (lw section-label-content-width))
+
+let section-body-fmt style entries ctx _ =
+  let content =
+    embed-block-top ctx section-body-content-width
+      (fun contentctx -> render-entries contentctx style entries)
+  in
+  NormalCell(
+    (body-left-pad, body-right-pad, section-v-pad, section-v-pad),
+    content
+  )
+
+let render-section ctx section =
+  let label = section#label in
+  let entries = section#entries in
+  let style = section#style in
+  let bodyfmt = section-body-fmt style entries in
+  let rules = [rect; v 1] in
+  let overrides = [set-fmt- (0, 1) bodyfmt] in
+  let formats = [section-label-fmt; bodyfmt] in
+  let cells = [label; {}] in
+  let table =
+    read-inline ctx
+      {\easytable?:(rules)?:(overrides)(formats)(cells);}
+  in
+  line-break false false
+    (ctx |> set-paragraph-margin 0pt 0pt)
+    (inline-fil ++ table ++ inline-fil)
+
+let-block ctx +cv-header header =
+  render-header ctx header
+
+let-block ctx +cv-section section =
+  render-section ctx section
+
+let render-footer footer =
+  let updated = footer#updated in
+  let ctx =
+    Context.make text-width
+    |> set-dominant-narrow-script Latin
+    |> set-language Latin English
+    |> set-font Latin font-latin-regular
+    |> set-font-size footer-font-size
+    |> set-paragraph-margin 0pt 0pt
+  in
+  line-break false false ctx
+    (read-inline ctx {Update: #updated;} ++ inline-fil)
+
+let short-cv-document footer bt =
+  Pager.make-document
+    Page.a4
+    (fun _ -> (|
+      text-height = text-height;
+      text-origin = (side-margin, top-margin);
+    |))
+    (fun _ -> (|
+      header-content = Block.nil;
+      header-origin = (0pt, 0pt);
+      footer-content = render-footer footer;
+      footer-origin = (side-margin, paper-height -' 13mm);
+    |))
+    (read-block base-context bt)

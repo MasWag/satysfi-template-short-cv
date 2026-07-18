@@ -1,0 +1,164 @@
+% -*- coding: utf-8 -*-
+%
+% A straight-faced academic parody CV for Cirno.
+%
+% Build with:
+%   satysfi short-cv.saty -o short-cv.pdf
+%
+
+@require: figbox/figbox
+
+@import: short-cv
+
+let header-data = (|
+  name = {Cirno};
+  subtitle = {Short Curriculum Vitae};
+  portrait =
+    FigBox.include-image 28mm `portrait.pdf`
+    |> FigBox.vmargin 2mm;
+  affiliation-lines = {|
+    Independent Ice Fairy
+  |};
+  email = Some(`cirno.9@mistlake.example`);
+  orcid = Some(`9999-0909-0000-0909`);
+  address-lines = {|
+    Misty Lake
+    |
+    Gensokyo
+  |};
+  %% We need to adjust the spacing
+  bottom-vspace = 50pt;
+|) in
+
+let titles-section = (|
+  label = {Titles and\cvbreak;classification};
+  style = Bulleted;
+  entries = {|
+    Species: Fairy
+    |
+    Common title: Ice Fairy of the Lake
+    |
+    Special ability: Manipulation of cold and ice
+    |
+    Principal area of activity: Misty Lake, Gensokyo
+    |
+    Self-awarded distinction: `The Strongest`
+  |};
+|) in
+
+let activity-section = (|
+  label = {Shortened\cvbreak;history of\cvbreak;activity};
+  style = Bulleted;
+  entries = {|
+    Scarlet Mist incident: Challenged travellers crossing Misty Lake.
+    |
+    Spring Snow incident: Conducted an unscheduled aerial interception under winter conditions.
+    |
+    Sixty-Year Flower incident: Participated independently in the widespread activity of local fairies.
+    |
+    Giant Youkai investigation: Searched for the presumed Daidarabotchi observed near Misty Lake.
+    |
+    Fairy War: Led a retaliatory campaign against the Three Fairies of Light.
+    |
+    Four Seasons incident: Undertook a Gensokyo-wide summer expedition while temporarily resistant to extreme heat.
+  |};
+|) in
+
+let expertise-section = (|
+  label = {Expertise and\cvbreak;interest areas};
+  style = Bulleted;
+  entries = {|
+    Localised manipulation of cold and ice
+    |
+    Generation of ice projectiles and defensive barriers
+    |
+    Aerial manoeuvring and short-range interception
+    |
+    Danmaku pattern design and spell-card combat
+    |
+    Freeze-thaw experimentation involving amphibians
+    |
+    Outdoor activity under winter and abnormal summer conditions
+  |};
+|) in
+
+let achievements-section = (|
+  label = {Main practical\cvbreak;achievements};
+  style = Bulleted;
+  entries = {|
+    Established Misty Lake as a long-term base for independent fairy activity.
+    |
+    Developed a recognisable collection of ice-based spell cards and projectile patterns.
+    |
+    Served as the principal protagonist and incident investigator in Fairy Wars.
+    |
+    Successfully confronted the Three Fairies of Light during the Fairy War.
+    |
+    Demonstrated sustained ice-fairy operation under midsummer conditions.
+    |
+    Acquired extensive experience recovering rapidly from unsuccessful danmaku engagements.
+  |};
+|) in
+
+let membership-section = (|
+  label = {Professional\cvbreak;membership and\cvbreak;activity};
+  style = Bulleted;
+  entries = {|
+    Active participant in the Misty Lake fairy community
+    |
+    Collaborator and friendly rival of the Three Fairies of Light
+    |
+    Regular participant in Gensokyo spell-card and danmaku activities
+    |
+    Independent organiser of pranks, challenges, and outdoor demonstrations
+    |
+    Occasional subject of reporting by the Bunbunmaru Newspaper
+  |};
+|) in
+
+let outreach-section = (|
+  label = {Publicity and\cvbreak;outreach\cvbreak;experience};
+  style = Bulleted;
+  entries = {|
+    Public demonstrations of instant freezing and ice-projectile generation
+    |
+    Repeated appearances in major Gensokyo incidents
+    |
+    Experience communicating strong conclusions with limited supporting evidence
+    |
+    Widely recognised through the personal circled-9 symbol
+    |
+    Maintains a consistent public claim to be `the strongest`
+  |};
+|) in
+
+let appearances-section = (|
+  label = {Selected five\cvbreak;documented\cvbreak;appearances};
+  style = Numbered;
+  entries = {|
+    Embodiment of Scarlet Devil - Stage 2 boss
+    |
+    Phantasmagoria of Flower View - Playable character
+    |
+    Touhou Hisoutensoku - Playable character and independent investigator
+    |
+    Fairy Wars - Main protagonist
+    |
+    Hidden Star in Four Seasons - Playable character and summer expedition participant
+  |};
+|) in
+
+let footer-data = (|
+  updated = {19/07/2026};
+|) in
+
+short-cv-document footer-data '<
+  +cv-header(header-data);
+  +cv-section(titles-section);
+  +cv-section(activity-section);
+  +cv-section(expertise-section);
+  +cv-section(achievements-section);
+  +cv-section(membership-section);
+  +cv-section(outreach-section);
+  +cv-section(appearances-section);
+>
